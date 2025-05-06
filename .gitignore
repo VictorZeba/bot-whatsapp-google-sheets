@@ -1,0 +1,34 @@
+# Ambiente Virtual
+env/
+
+# Arquivos compilados e caches
+__pycache__/
+*.py[cod]
+*.so
+*.pyc
+
+# Arquivos de credenciais sensíveis
+credenciais.json
+token.json
+.env
+
+# Logs e arquivos temporários
+*.log
+*.tmp
+*.bak
+
+# Arquivos do sistema operacional Windows
+Thumbs.db
+desktop.ini
+
+# Arquivos do OneDrive
+*.one*
+
+# Arquivos gerados automaticamente pelo Python
+*.zip
+*.egg-info/
+dist/
+build/
+
+# Arquivos do Google Sheets API (se não for usar)
+*.xlsx
