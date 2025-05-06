@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request
 import gspread
 from google.oauth2.service_account import Credentials
@@ -8,9 +9,8 @@ app = Flask(__name__)
 
 # === CONFIGURAÇÃO DO GOOGLE SHEETS ===
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
-CREDENTIALS_FILE = "credenciais.json"
-PLANILHA_ID = "1ToDWKQjr4w2El8JKvoD5Wbe5BA9_zccgbC5bbyqY-so"  # Exemplo: "1abcXYZ123..."
-
+CREDENTIALS_FILE = os.getenv("CREDENTIALS_FILE", "credenciais.json")
+PLANILHA_ID = os.getenv("PLANILHA_ID")
 # === FUNÇÃO PARA EXTRAI OS ITENS ===
 def extrair_itens(texto):
     palavras_chave = ['roteador', 'notebook', 'monitor', 'cabo', 'fonte']
@@ -25,10 +25,12 @@ def extrair_itens(texto):
 # === FUNÇÃO DE INICIALIZAÇÃO DO GOOGLE SHEETS ===
 def inicializar_google_sheets():
     try:
+        # Carrega as credenciais usando o arquivo especificado nas variáveis de ambiente
         credenciais = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=SCOPES)
         client = gspread.authorize(credenciais)
         planilha = client.open_by_key(PLANILHA_ID)
         mes_atual = datetime.now().strftime("%m-%Y")
+
         abas_existentes = [aba.title for aba in planilha.worksheets()]
         if mes_atual not in abas_existentes:
             print(f"➕ Criando aba '{mes_atual}'...")
@@ -45,13 +47,12 @@ def inicializar_google_sheets():
 # === ROTA PRINCIPAL ===
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    # Verifica se a requisição tem Content-Type correto
     if not request.is_json:
         print("❌ Requisição sem JSON.")
         return 'Unsupported Media Type', 415
 
     data = request.get_json()
-    
+
     if not data or 'text' not in data or 'message' not in data['text']:
         print("⚠️ Dados inválidos recebidos.")
         return 'OK', 200
@@ -92,4 +93,4 @@ def webhook():
     return 'OK', 200
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)))
