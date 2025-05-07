@@ -25,7 +25,6 @@ def extrair_itens(texto):
 # === FUNÇÃO DE INICIALIZAÇÃO DO GOOGLE SHEETS ===
 def inicializar_google_sheets():
     try:
-        # Carrega as credenciais usando o arquivo especificado nas variáveis de ambiente
         credenciais = Credentials.from_service_account_file(CREDENTIALS_FILE, scopes=SCOPES)
         client = gspread.authorize(credenciais)
         planilha = client.open_by_key(PLANILHA_ID)
@@ -36,10 +35,16 @@ def inicializar_google_sheets():
             print(f"➕ Criando aba '{mes_atual}'...")
             ws_modelo = planilha.sheet1
             ws_nova = planilha.add_worksheet(title=mes_atual, rows="100", cols="10")
-            ws_nova.update([ws_modelo.get_all_values()[0]])  # Copia cabeçalho
+            ws_nova.update([ws_modelo.get_all_values()[0]])
         else:
             print(f"✅ Usando aba existente '{mes_atual}'")
-        return planilha.worksheet(mes_atual)
+            ws_nova = planilha.worksheet(mes_atual)
+
+        # Garantindo que a aba tenha ao menos 100 linhas
+        if ws_nova.row_count < 100:
+            ws_nova.resize(rows=100)
+
+        return ws_nova
     except Exception as e:
         print(f"❌ Erro ao conectar ao Google Sheets: {e}")
         exit()
@@ -74,11 +79,20 @@ def webhook():
     data_hora = agora.strftime("%d/%m/%Y %H:%M")
 
     for item in itens:
-        linha = ws.row_count + 1
+        # Encontre a primeira linha realmente vazia, começando da linha 2
+        linha = 2
+        while linha <= ws.row_count and ws.acell(f"A{linha}").value:
+            linha += 1
+
+        # Se ultrapassou as linhas existentes, use a próxima disponível
+        if linha > ws.row_count:
+            linha = ws.row_count + 1
+
+        # Inserir a nova linha
         ws.insert_row([
             "",                         # Nº
             nome_cliente,               # Cliente
-            "",                         # Email (vazio pois vem do WhatsApp)
+            "",                         # Email
             item,                       # Itens do Pedido
             data_hora.split()[0],       # Data
             data_hora.split()[1],       # Hora
@@ -88,7 +102,7 @@ def webhook():
             ""                          # ML Prazo
         ], linha)
 
-        print(f"✅ Pedido adicionado: {nome_cliente} - {item}")
+    print(f"✅ Pedido adicionado: {nome_cliente} - {item}")
 
     return 'OK', 200
 
