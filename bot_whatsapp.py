@@ -53,11 +53,11 @@ def inicializar_google_sheets():
 # === ROTA DE VERIFICAÇÃO (GET) ===
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
-    token_enviado = request.args.get('hub.verify_token')
-    challenge_enviado = request.args.get('hub.challenge')
+    hub_verify_token = request.args.get('hub.verify_token')
+    challenge = request.args.get('hub.challenge')
 
-    if token_enviado == os.getenv("WHATSAPP_VERIFY_TOKEN"):
-        return challenge_enviado, 200
+    if hub_verify_token == os.getenv("WHATSAPP_VERIFY_TOKEN"):
+        return challenge, 200
     return 'Invalid verification token', 403
 
 # === ROTA PRINCIPAL (POST) ===
